@@ -1,4 +1,5 @@
-package Lexer;
+package lexer;
+import java.io.IOException;
 import java.util.Scanner;
 
 public class Lexer {
@@ -11,13 +12,13 @@ public class Lexer {
 
         // TODO all the others
 
-        public String description;
-        public int value;
+        public final String description;
+        public final int value;
 
-		private Tokens(String description, int value) {
-		    this.description = description;
-			this.value = value;
-		}
+        private Tokens(String description, int value) {
+            this.description = description;
+            this.value = value;
+        }
 
     }
 
@@ -29,38 +30,38 @@ public class Lexer {
         return String.valueOf((char) value);
     }
 
-    public int GetTok() {
+    public int GetTok() throws IOException {
         int LastChar = ' ';
         Scanner scanner = new Scanner(System.in);
 
         while (Character.isWhitespace(LastChar)) {
-            LastChar = scanner.next().charAt(0);
+            LastChar = System.in.read();
         }
 
         // characters
         if (Character.isAlphabetic(LastChar)) {
-           Identifier = toString(LastChar);
+            Identifier = toString(LastChar);
 
-           while(Character.isDigit(LastChar = scanner.next().charAt(0))) {
-               Identifier += toString(LastChar);
-           }
+            while(Character.isDigit(LastChar = System.in.read())) {
+                Identifier += toString(LastChar);
+            }
 
-           if (Identifier == Tokens.FUNC.description) {
-               scanner.close(); // holy hell
-               return Tokens.FUNC.value;
-           }
+            if (Identifier == Tokens.FUNC.description) {
+                scanner.close(); // holy hell
+                return Tokens.FUNC.value;
+            }
 
-           // TODO all the others
+            // TODO all the others
         }
 
         // numbers
         if (Character.isDigit(LastChar) || LastChar == '.') {
             String NumStr = toString(LastChar);
-            LastChar = scanner.next().charAt(0);
+            LastChar = System.in.read();
 
             while (Character.isDigit(LastChar) || LastChar == '.') {
                 NumStr += toString(LastChar);
-                LastChar = scanner.next().charAt(0);
+                LastChar = System.in.read();
             }
 
             NumVal = Integer.parseInt(NumStr);
@@ -70,10 +71,10 @@ public class Lexer {
 
         // comments
         if (LastChar == '#') { // i just picked one, you can change this
-            LastChar = scanner.next().charAt(0);
+            LastChar = System.in.read();
 
             while(LastChar != '\n' && LastChar != '\r') { // EOF ????????
-                LastChar = scanner.next().charAt(0);
+                LastChar = System.in.read();
             }
 
             scanner.close();
@@ -81,7 +82,7 @@ public class Lexer {
         }
 
         int Char = LastChar;
-        LastChar = scanner.next().charAt(0);
+        LastChar = System.in.read();
 
         scanner.close();
         return Char;
