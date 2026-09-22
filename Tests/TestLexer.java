@@ -1,5 +1,58 @@
 package Tests;
 
+import lexer.Lexer;
+import org.junit.jupiter.api.Test;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import static org.junit.jupiter.api.Assertions.*;
+
 public class TestLexer {
 
+    @Test
+    void testProcDeclarationTokens() throws IOException {
+        // for now (int64 fails because it gets treated as one string
+        String code = "proc name ( int64 name | int64 name) { \n ret 281 \n }";
+
+        Lexer lex = new Lexer(new ByteArrayInputStream(code.getBytes()));
+
+        assertEquals(Lexer.Tokens.FUNC.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.IDENTIFIER.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.OPEN_PAR.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.INT64.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.IDENTIFIER.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.PARAMS.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.INT64.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.IDENTIFIER.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.CLOSE_PAR.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.OPEN_FUNC.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.RET.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.NUMBER.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.CLOSE_FUNC.value, lex.GetTok());
+    }
+
+    @Test
+    void testConditionalTokens() throws IOException {
+        // for now (int64 fails because it gets treated as one string
+        String code = "if name > 64 { \n\n } eif name < 32 { \n \n } else { \n \n }";
+
+        Lexer lex = new Lexer(new ByteArrayInputStream(code.getBytes()));
+
+        assertEquals(Lexer.Tokens.IF.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.IDENTIFIER.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.MORE.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.NUMBER.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.OPEN_FUNC.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.CLOSE_FUNC.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.EIF.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.IDENTIFIER.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.LESS.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.NUMBER.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.OPEN_FUNC.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.CLOSE_FUNC.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.ELSE.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.OPEN_FUNC.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.CLOSE_FUNC.value, lex.GetTok());
+    }
+
+    // assignments for now don't work '->' are considered two tokens
 }

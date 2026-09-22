@@ -1,92 +1,137 @@
 package lexer;
+
 import java.io.IOException;
-import java.util.Scanner;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Lexer {
 
-    // what even is this shit
-    enum Tokens {
+    public enum Tokens {
         FUNC("proc", -1),
         INT64("int64", -2),
-        NUMBER("unused", -3);
-
-        // TODO all the others
+        NUMBER("unused", -3), // number returns
+        RET("ret", -4),
+        INT32("int32", -5),
+        FLOAT32("flt32", -6),
+        FLOAT64("flt64", -7),
+        STRING("str", -8),
+        BOOL("01", -9),
+        UINT32("uint32", -10),
+        UINT64("uint64", -11),
+        MUL("*", -12),
+        DIV("/", -13),
+        ADD("+", -14),
+        SUB("-", -15),
+        IF("if", -16),
+        EIF("eif", -17),
+        ELSE("else", -18),
+        FOR("for", -19),
+        OPEN_PAR("(", -20),
+        CLOSE_PAR(")", -21),
+        OPEN_FUNC("{", -22),
+        CLOSE_FUNC("}", -23),
+        LESS("<", -24),
+        MORE(">", -25),
+        IMPORT("import", -26),
+        ARRAY_OPEN("[", -27),
+        ARRAY_CLOSE("]", -28),
+        PARAMS("|", -29),
+        IDENTIFIER("id", -30),
+        EOF("eof", -31);
 
         public final String description;
         public final int value;
 
-        private Tokens(String description, int value) {
+        Tokens(String description, int value) {
             this.description = description;
             this.value = value;
         }
-
     }
 
-    private String Identifier;
-    private double NumVal;
+    // status vars
+    private int LastChar = ' ';
+    public String IdentifierStr;
+    public double NumVal;
 
-    // holy mother of GabeN
-    private String toString(int value) {
-        return String.valueOf((char) value);
+    private final InputStream input;
+
+    private static final Map<String, Tokens> keywordMap = new HashMap<>();
+    static {
+        for (Tokens t : Tokens.values()) {
+            keywordMap.put(t.description, t);
+        }
+    }
+
+
+    public Lexer(InputStream input) {
+        this.input = input;
     }
 
     public int GetTok() throws IOException {
-        int LastChar = ' ';
-        Scanner scanner = new Scanner(System.in);
 
+        // skips whitespaces
         while (Character.isWhitespace(LastChar)) {
-            LastChar = System.in.read();
+            LastChar = input.read();
         }
 
-        // characters
-        if (Character.isAlphabetic(LastChar)) {
-            Identifier = toString(LastChar);
+        // EOF for some fucking reason in java is -1
+        if (LastChar == -1) {
+            return Tokens.EOF.value;
+        }
 
-            while(Character.isDigit(LastChar = System.in.read())) {
-                Identifier += toString(LastChar);
+        // chars
+        if (Character.isAlphabetic(LastChar) || LastChar == '(' || LastChar == ')' || LastChar == '[' || LastChar == ']' || LastChar == '|' || LastChar == '{' || LastChar == '}' || LastChar == '>' || LastChar == '<') {
+            StringBuilder sb = new StringBuilder();
+
+            do {
+                sb.append((char) LastChar);
+                LastChar = input.read();
+            } while (Character.isLetterOrDigit(LastChar));
+
+            IdentifierStr = sb.toString();
+
+            // hashmap should be faster
+            Tokens token = keywordMap.get(IdentifierStr);
+            if (token != null && token != Tokens.IDENTIFIER && token != Tokens.NUMBER && token != Tokens.EOF) {
+                return token.value;
             }
 
-            if (Identifier == Tokens.FUNC.description) {
-                scanner.close(); // holy hell
-                return Tokens.FUNC.value;
-            }
-
-            // TODO all the others
+            // if it's not a word it must be an identifier ig
+            return Tokens.IDENTIFIER.value;
         }
 
         // numbers
         if (Character.isDigit(LastChar) || LastChar == '.') {
-            String NumStr = toString(LastChar);
-            LastChar = System.in.read();
+            StringBuilder NumStr = new StringBuilder();
 
-            while (Character.isDigit(LastChar) || LastChar == '.') {
-                NumStr += toString(LastChar);
-                LastChar = System.in.read();
-            }
+            do {
+                NumStr.append((char) LastChar);
+                LastChar = input.read();
+            } while (Character.isDigit(LastChar) || LastChar == '.');
 
-            NumVal = Integer.parseInt(NumStr);
-            scanner.close(); // holy hell
+            // parse float numbers
+            NumVal = Double.parseDouble(NumStr.toString());
             return Tokens.NUMBER.value;
         }
 
-        // comments
-        if (LastChar == '#') { // i just picked one, you can change this
-            LastChar = System.in.read();
+        // Comments
+        if (LastChar == '#') {
+            do {
+                LastChar = input.read();
+            } while (LastChar != -1 && LastChar != '\n' && LastChar != '\r');
 
-            while(LastChar != '\n' && LastChar != '\r') { // EOF ????????
-                LastChar = System.in.read();
+            if (LastChar != -1) {
+                return GetTok(); // try again
             }
-
-            scanner.close();
-            return GetTok();
         }
 
-        int Char = LastChar;
-        LastChar = System.in.read();
+        // returns the ASCII if unrecognized
+        int ThisChar = LastChar;
 
-        scanner.close();
-        return Char;
+        // next one
+        LastChar = input.read();
+
+        return ThisChar;
     }
-
-
 }
