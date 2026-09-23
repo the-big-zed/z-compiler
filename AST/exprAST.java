@@ -8,19 +8,29 @@ public class exprAST {
     }
 }
 
+public exprAST LogError(final String err) {
+    System.out.printf("Error: %s", err);
+    return null;
+}
+
+public PrototypeAST LogErrorP(final String err) {
+    System.out.printf("Error: %s",err);
+    return null;
+}
+
 class NumberExprAST extends exprAST {
     private final double val;
 
-    public NumberExprAST(final double val) {
-        this.val = val;
+    public NumberExprAST(final double Val) {
+        val = Val;
     }
 }
 
 class VariableExprAST extends exprAST {
     private final String name;
 
-    public VariableExprAST(final String name) {
-        this.name = name;
+    public VariableExprAST(final String Name) {
+        name = Name;
     }
 }
 
@@ -30,10 +40,10 @@ class BinaryExprAST extends exprAST {
     private final exprAST right;
 
 
-    public BinaryExprAST(final char op, final exprAST left, final exprAST right) {
-        this.op = op;
-        this.left = left;
-        this.right = right;
+    public BinaryExprAST(final char Op, final exprAST Left, final exprAST Right) {
+        op = Op;
+        left = Left;
+        right = Right;
     }
 }
 
@@ -41,9 +51,9 @@ class CallExprAST extends exprAST {
     private final String Callee;
     private final exprAST[] args;
 
-    public CallExprAST(final String Callee, final exprAST[] args) {
-        this.Callee = Callee;
-        this.args = args;
+    public CallExprAST(final String callee, final exprAST[] Args) {
+        Callee = callee;
+        args = Args;
     }
 }
 
