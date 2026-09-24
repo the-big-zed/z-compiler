@@ -47,6 +47,10 @@ public class Lexer {
             this.description = description;
             this.value = value;
         }
+
+        public static Tokens fromValues(int value) {
+            return keywordMap.getOrDefault(value, null);
+        }
     }
 
     // status vars
@@ -62,6 +66,8 @@ public class Lexer {
             keywordMap.put(t.description, t);
         }
     }
+
+
 
 
     public Lexer(InputStream input) {
