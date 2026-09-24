@@ -54,5 +54,23 @@ public class TestLexer {
         assertEquals(Lexer.Tokens.CLOSE_FUNC.value, lex.GetTok());
     }
 
+    @Test
+    void testAssignmentOperator() throws IOException {
+        String code = "->";
+
+        Lexer lex = new Lexer(new ByteArrayInputStream(code.getBytes()));
+
+        assertEquals(Lexer.Tokens.ASSIGN.value, lex.GetTok());
+    }
+
+    @Test
+    void testSlashComments() throws IOException {
+        String code = "// this is a comment\nret";
+
+        Lexer lex = new Lexer(new ByteArrayInputStream(code.getBytes()));
+
+        assertEquals(Lexer.Tokens.RET.value, lex.GetTok());
+    }
+
     // assignments for now don't work '->' are considered two tokens
 }
