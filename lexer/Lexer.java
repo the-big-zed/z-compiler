@@ -23,6 +23,7 @@ public class Lexer {
         DIV("/", -13),
         ADD("+", -14),
         SUB("-", -15),
+        ASSIGN("->", -30),
         IF("if", -16),
         EIF("eif", -17),
         ELSE("else", -18),
@@ -57,6 +58,7 @@ public class Lexer {
     private final InputStream input;
 
     private static final Map<String, Tokens> keywordMap = new HashMap<>();
+
     static {
         for (Tokens t : Tokens.values()) {
             keywordMap.put(t.description, t);
@@ -80,58 +82,83 @@ public class Lexer {
             return Tokens.EOF.value;
         }
 
-        // chars
-        if (Character.isAlphabetic(LastChar) || LastChar == '(' || LastChar == ')' || LastChar == '[' || LastChar == ']' || LastChar == '|' || LastChar == '{' || LastChar == '}' || LastChar == '>' || LastChar == '<') {
-            StringBuilder sb = new StringBuilder();
+        // assignment operator ->
+        if (LastChar == '-') {
+            LastChar = input.read();
 
-            do {
-                sb.append((char) LastChar);
+            if (LastChar == '>') {
                 LastChar = input.read();
-            } while (Character.isLetterOrDigit(LastChar));
-
-            IdentifierStr = sb.toString();
-
-            // hashmap should be faster
-            Tokens token = keywordMap.get(IdentifierStr);
-            if (token != null && token != Tokens.IDENTIFIER && token != Tokens.NUMBER && token != Tokens.EOF) {
-                return token.value;
+                return Tokens.ASSIGN.value;
             }
 
-            // if it's not a word it must be an identifier ig
-            return Tokens.IDENTIFIER.value;
+            return Tokens.SUB.value;
         }
 
-        // numbers
-        if (Character.isDigit(LastChar) || LastChar == '.') {
-            StringBuilder NumStr = new StringBuilder();
+        // chars
 
-            do {
-                NumStr.append((char) LastChar);
-                LastChar = input.read();
-            } while (Character.isDigit(LastChar) || LastChar == '.');
+        if (Character.isAlphabetic(LastChar)) {
+                StringBuilder sb = new StringBuilder();
 
-            // parse float numbers
-            NumVal = Double.parseDouble(NumStr.toString());
-            return Tokens.NUMBER.value;
+                do {
+                    sb.append((char) LastChar);
+                    LastChar = input.read();
+                } while (Character.isLetterOrDigit(LastChar));
+
+                IdentifierStr = sb.toString();
+
+                // hashmap should be faster
+                Tokens token = keywordMap.get(IdentifierStr);
+                if (token != null && token != Tokens.IDENTIFIER && token != Tokens.NUMBER && token != Tokens.EOF) {
+                    return token.value;
+                }
+
+                // if it's not a word it must be an identifier ig
+                return Tokens.IDENTIFIER.value;
         }
+
+            // numbers
+            if (Character.isDigit(LastChar) || LastChar == '.') {
+                StringBuilder NumStr = new StringBuilder();
+
+                do {
+                    NumStr.append((char) LastChar);
+                    LastChar = input.read();
+                } while (Character.isDigit(LastChar) || LastChar == '.');
+
+                // parse float numbers
+                NumVal = Double.parseDouble(NumStr.toString());
+                return Tokens.NUMBER.value;
+            }
 
         // Comments
-        if (LastChar == '#') {
-            do {
-                LastChar = input.read();
-            } while (LastChar != -1 && LastChar != '\n' && LastChar != '\r');
+        if (LastChar == '/') {
+            LastChar = input.read();
 
-            if (LastChar != -1) {
-                return GetTok(); // try again
+            if (LastChar == '/') {
+                do {
+                    LastChar = input.read();
+                } while (LastChar != -1 && LastChar != '\n' && LastChar != '\r');
+
+                return GetTok();
             }
+
+            return Tokens.DIV.value;
         }
 
-        // returns the ASCII if unrecognized
-        int ThisChar = LastChar;
+        Tokens symbol = keywordMap.get(Character.toString((char) LastChar));
 
-        // next one
-        LastChar = input.read();
+        if (symbol != null) {
+            LastChar = input.read();
+            return symbol.value;
+        }
 
-        return ThisChar;
+            // returns the ASCII if unrecognized
+            int ThisChar = LastChar;
+
+            // next one
+            LastChar = input.read();
+
+            return ThisChar;
+        }
+
     }
-}
