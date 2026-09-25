@@ -44,6 +44,7 @@ public class Parser {
             }
             else {
                 ExprAST.LogError("Unknown error (default case)");
+                Next();
             }
 
         }
