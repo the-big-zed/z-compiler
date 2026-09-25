@@ -1,6 +1,6 @@
 package Tests;
 
-import lexer.Lexer;
+import src.lexer.Lexer;
 import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
