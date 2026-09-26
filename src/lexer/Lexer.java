@@ -1,4 +1,4 @@
-package lexer;
+package src.lexer;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,8 +38,9 @@ public class Lexer {
         ARRAY_OPEN("[", -27),
         ARRAY_CLOSE("]", -28),
         PARAMS("|", -29),
-        IDENTIFIER("id", -30),
-        EOF("eof", -31);
+        IDENTIFIER("id", -34),
+        EOF("eof", -31),
+        SAME("=", -32);
 
         public final String description;
         public final int value;
@@ -47,6 +48,10 @@ public class Lexer {
         Tokens(String description, int value) {
             this.description = description;
             this.value = value;
+        }
+
+        public static Tokens fromValues(int value) {
+            return java.util.Arrays.stream(values()).filter(token -> token.value == value).findFirst().orElse(null);
         }
     }
 
