@@ -38,7 +38,7 @@ public class Lexer {
         ARRAY_OPEN("[", -27),
         ARRAY_CLOSE("]", -28),
         PARAMS("|", -29),
-        IDENTIFIER("id", -30),
+        IDENTIFIER("id", -34),
         EOF("eof", -31),
         SAME("=", -32);
 
