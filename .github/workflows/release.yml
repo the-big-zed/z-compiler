@@ -1,0 +1,33 @@
+name: Create Binary for Linux (Release)
+
+on:
+  push:
+    tags:
+      - 'v*' 
+
+jobs:
+  build-native:
+    name: Compila binario nativo (GraalVM)
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configures GraalVM (JDK 21)
+      uses: graalvm/setup-graalvm@v1
+      with:
+        java-version: '21'
+        distribution: 'graalvm'
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Compiles
+      run: mvn --batch-mode -Pnative package
+
+    - name: Renames the exe
+      run: mv target/z-compiler z-linux-amd64
+
+    - name: Publish it
+      uses: softprops/action-gh-release@v2
+      with:
+        files: z-linux-amd64
+        generate_release_notes: true
