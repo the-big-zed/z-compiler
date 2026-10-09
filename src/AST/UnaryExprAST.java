@@ -24,9 +24,13 @@ public final class UnaryExprAST extends ExprAST {
     @Override
     public Value Codegen(final IRBuilder b) {
         final Value value = operand.Codegen(b);
-        if (value == null) return null;
+        if (value == null) {
+            b.markFailed();
+            return null;
+        }
         final String register = b.nextRegister();
-        b.appendLine(register + " = " + (value.type().isFloat() ? "fneg " : "sub ") + " " + value.type().llvm() + " 0, " + value.text());
+        final String instruction = value.type().isFloat() ? "fneg " + value.type().llvm() + " " + value.text() : "sub " + value.type().llvm() + " 0, " + value.text();
+        b.appendLine(register + " = " + instruction);
         b.setRegisterType(register, value.type().llvm());
         return new Value(register, value.type());
     }

@@ -202,19 +202,26 @@ public class Parser {
      * @throws IOException
      */
     public final ExprAST ParseNumberExpr(final double numVal) throws IOException {
-        final ExprAST result = literal(numVal);
+        final ExprAST result = literal(numVal, lex.NumberText, lex.NumIsFloat);
         Next();
         return result;
     }
 
     /**
-     * Builds the node for a number the lexer reported as a double.
      *
      * @param numVal the value the lexer produced
+     * @param text the literal as written, or null if there is none
+     * @param floating whether the source had a decimal point or an exponent
      * @return the number node
      */
-    private static NumberExprAST literal(final double numVal) {
-        if (numVal == Math.rint(numVal) && Math.abs(numVal) <= LONG_EXACT_LIMIT) {
+    private static NumberExprAST literal(final double numVal, final String text, final boolean floating) {
+        if (!floating && text != null) {
+            try {
+                return new NumberExprAST(Long.toString(Long.parseLong(text)), Long.parseLong(text));
+            } catch (final NumberFormatException ignored) {
+            }
+        }
+        if (!floating && numVal == Math.rint(numVal) && Math.abs(numVal) <= LONG_EXACT_LIMIT) {
             final long asLong = (long) numVal;
             return new NumberExprAST(Long.toString(asLong), asLong);
         }
@@ -410,9 +417,7 @@ public class Parser {
         }
         Next();
 
-        final ExprAST body = bodyStatements.size() == 1
-                ? bodyStatements.get(0)
-                : new BlockAST(bodyStatements);
+        final ExprAST body = bodyStatements.size() == 1 ? bodyStatements.get(0) : new BlockAST(bodyStatements);
 
         return new ForAST(varType, varName, init, cond, update, body);
     }
@@ -543,6 +548,10 @@ public class Parser {
      * @throws IOException
      */
     public final FunctionAST ParseDefinition() throws IOException {
+        if (curTok == Lexer.Tokens.EOF.value) {
+            return null;
+        }
+
         Next();
         final PrototypeAST proto = ParsePrototype();
         if (proto == null) return null;

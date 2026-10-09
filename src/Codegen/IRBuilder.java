@@ -4,6 +4,7 @@ import src.AST.PrototypeAST;
 import src.AST.Value;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -29,10 +30,35 @@ public class IRBuilder {
      * Every function signature seen so far, so a call can be typed and checked.
      *
      */
-    private final Map<String, PrototypeAST> signatures = new java.util.HashMap<>();
+    private final Map<String, PrototypeAST> signatures = new LinkedHashMap<>();
 
     private boolean terminated;
     private String returnType = "double";
+
+    /**.
+     */
+    private boolean failed;
+
+    /** Records that generation hit an error the caller cannot see. */
+    public void markFailed() {
+        this.failed = true;
+    }
+
+    /** @return whether anything reported an error since the last reset */
+    public boolean hasFailed() {
+        return failed;
+    }
+
+    /**
+     *
+     * @param prototype the signature to declare
+     * @return false when the name is already taken, in which case nothing changes
+     */
+    public boolean declare(final PrototypeAST prototype) {
+        if (signatures.containsKey(prototype.getName())) return false;
+        signatures.put(prototype.getName(), prototype);
+        return true;
+    }
 
     public void emitReturn(final Value value) {
         final String target = returnType;
@@ -118,9 +144,11 @@ public class IRBuilder {
      */
     public void reset() {
         registerCount = 1;
+        labelCount = 0;
         irCode.setLength(0);
         registerTypes.clear();
         terminated = false;
+        failed = false;
     }
 
     /**

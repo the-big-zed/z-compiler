@@ -16,6 +16,9 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 @Command(name = "compiler", mixinStandardHelpOptions = true, version = "1", description = "Compiler z-code")
@@ -101,6 +104,48 @@ class CompilerCmd implements Callable<Integer> {
         final IRBuilder builder = new IRBuilder();
         final StringBuilder module = new StringBuilder();
 
+        final List<FunctionAST> definitions = parseDefinitions(parser, lexer);
+        if (definitions == null) return null;
+        if (definitions.isEmpty()) {
+            System.err.println("Syntax error");
+            return null;
+        }
+
+        for (final FunctionAST definition : definitions) {
+            if (!builder.declare(definition.prototype())) {
+                System.err.println("Error: '" + definition.prototype().getName() + "' is defined more than once");
+                return null;
+            }
+        }
+
+        for (final FunctionAST definition : definitions) {
+            final Value function = definition.Codegen(builder);
+            if (function == null || builder.hasFailed()) {
+                System.err.println("Error building the IR");
+                return null;
+            }
+            module.append(function.text());
+        }
+
+        if (module.isEmpty()) {
+            System.err.println("Syntax error");
+            return null;
+        }
+
+        return module.toString();
+    }
+
+    /**
+     * Reads every definition in the file, reporting the first syntax error.
+     *
+     * @param parser the parser, positioned on the next token
+     * @param lexer the lexer it reads from
+     * @return the definitions in source order, or null if one failed to parse
+     * @throws IOException if the input cannot be read
+     */
+    private static List<FunctionAST> parseDefinitions(final Parser parser, final Lexer lexer) throws IOException {
+        final List<FunctionAST> definitions = new ArrayList<>();
+
         while (true) {
             final PrintStream diagnostics = System.err;
             final ByteArrayOutputStream reported = new ByteArrayOutputStream();
@@ -115,31 +160,19 @@ class CompilerCmd implements Callable<Integer> {
                 System.setErr(diagnostics);
             }
 
-            if (endOfInput) break;
-
             if (reported.size() > 0) {
                 diagnostics.print(reported.toString(StandardCharsets.UTF_8));
             }
 
+            if (endOfInput && reported.size() == 0) return definitions;
+
             if (definition == null) {
                 System.err.println("Syntax error");
-                return null;
+                return Collections.emptyList();
             }
 
-            final Value function = definition.Codegen(builder);
-            if (function == null) {
-                System.err.println("Error building the IR");
-                return null;
-            }
-            module.append(function.text());
+            definitions.add(definition);
         }
-
-        if (module.isEmpty()) {
-            System.err.println("Syntax error");
-            return null;
-        }
-
-        return module.toString();
     }
 
     /**

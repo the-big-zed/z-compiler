@@ -115,15 +115,28 @@ public enum ZType {
 
     /**
      * Prints a whole number in the right LLVM syntax for this type.
+     *
+     * @param value the value to print
+     * @return literal text valid for this type
+     */
+    public String literal(final long value) {
+        if (this == BOOL) return Boolean.toString(value != 0);
+        if (isVoid()) throw new IllegalStateException("void has no literal");
+        if (isFloat()) return Double.toString(value);
+        if (bits() == 32) return Integer.toString((int) value);
+        return Long.toString(value);
+    }
+
+    /**
+     * Prints a fractional number in the right LLVM syntax for this type.
+     *
      * @param value the value to print
      * @return literal text valid for this type
      */
     public String literal(final double value) {
-        if (this == BOOL) return Boolean.toString(value != 0); // what even is this method
+        if (this == BOOL) return Boolean.toString(value != 0);
         if (isVoid()) throw new IllegalStateException("void has no literal");
-        if (isFloat()) {
-            return Double.toString(value);
-        }
+        if (isFloat()) return Double.toString(value);
         if (bits() == 32) return Integer.toString((int) value);
         return Long.toString((long) value);
     }

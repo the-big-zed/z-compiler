@@ -5,17 +5,7 @@ import src.Codegen.SymbolTable;
 import src.Parser.ZType;
 
 /**
- * A declaration: {@code <type> <name> -> <value>} or {@code cn <type> <name> -> <value>}.
  *
- * <p>These were two nodes that were the same node. {@code VariableExprAST}'s
- * declaration branch and {@code ConstantAST} each defined the symbol, allocated
- * it, generated the initialiser and stored it — about thirty-five duplicated
- * lines, differing only in a flag and in the wording of an error. A constant is a
- * declaration that may not be assigned again, so that is the only difference.
- *
- * <p>A declaration produces no value. It used to return its own address, which is
- * how a body whose last statement was {@code int32 x -> 5} came to return a
- * pointer to {@code x}: LLVM saw {@code fptosi double %x to i32} and said no.
  */
 public final class DeclaratorExprAST extends ExprAST {
 
@@ -51,6 +41,7 @@ public final class DeclaratorExprAST extends ExprAST {
     public Value Codegen(final IRBuilder builder) {
         if (builder.symbols().lookupCurrentScope(name) != null) {
             System.err.println("Error: Shadowing o ridichiarazione locale: " + name);
+            builder.markFailed();
             return null;
         }
 
@@ -60,13 +51,11 @@ public final class DeclaratorExprAST extends ExprAST {
         } else {
             final Value value = initialiser.Codegen(builder);
             if (value == null) {
-                // The initialiser failed. Declaring the variable anyway would
-                // leave a slot nothing ever writes, and every later read of it
-                // would be whatever the stack happened to hold.
+
+                builder.markFailed();
                 return null;
             }
-            // On the initialiser, not on this: a literal re-prints itself
-            // in the target type, and that override lives on the literal.
+
             final Value fitted = initialiser.coerce(builder, value, type);
             if (fitted == null) return null;
             text = fitted.text();
