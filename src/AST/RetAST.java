@@ -20,7 +20,10 @@ public final class RetAST extends ExprAST {
     public Value Codegen(final IRBuilder builder) {
         if (value == null) return null;
         final Value produced = value.Codegen(builder);
-        if (produced == null) return null;
+        if (produced == null) {
+            builder.markFailed();
+            return null;
+        }
         builder.emitReturn(produced);
         return null;
     }

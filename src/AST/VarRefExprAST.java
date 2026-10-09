@@ -28,6 +28,7 @@ public final class VarRefExprAST extends ExprAST {
         final SymbolTable.SymbolInfo info = builder.symbols().lookup(name);
         if (info == null) {
             System.err.println("Error: Variabile non dichiarata: " + name);
+            builder.markFailed();
             return null;
         }
         final ZType type = ZType.fromZName(zNameOf(info));

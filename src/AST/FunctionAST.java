@@ -35,7 +35,7 @@ public final class FunctionAST extends ExprAST {
     public Value Codegen(final IRBuilder builder) {
         builder.reset();
         builder.symbols().enterScope();
-        builder.signatures().put(proto.getName(), proto);
+        builder.declare(proto);
         builder.setReturnType(returnType().llvm());
 
         final boolean isMain = proto.isMain();
@@ -53,20 +53,26 @@ public final class FunctionAST extends ExprAST {
             final ZType type = ZType.fromZName(param.type);
             final String slot = builder.emitAlloca(param.name + ".addr", type.llvm());
             builder.emitStore("%" + param.name, type.llvm(), slot);
-            parametersAreDistinct &= builder.symbols().define(param.name,
-                    new SymbolTable.SymbolInfo(param.name, type.llvm(), slot, false));
+            parametersAreDistinct &= builder.symbols().define(param.name, new SymbolTable.SymbolInfo(param.name, type.llvm(), slot, false));
         }
         if (!parametersAreDistinct) {
             System.err.println("Error: '" + proto.getName() + "' declares the same parameter twice");
+            builder.markFailed();
             builder.symbols().exitScope();
             return null;
         }
 
         if (body != null) body.Codegen(builder);
 
+        if (builder.hasFailed()) {
+            builder.symbols().exitScope();
+            return null;
+        }
+
         if (!builder.isTerminated()) {
             if (!isMain) {
                 System.err.println("Error: '" + proto.getName() + "' can reach the end without returning");
+                builder.markFailed();
                 builder.symbols().exitScope();
                 return null;
             }

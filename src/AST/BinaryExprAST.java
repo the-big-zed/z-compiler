@@ -48,15 +48,21 @@ public final class BinaryExprAST extends ExprAST {
 
     @Override
     public ZType type(final IRBuilder builder) {
-        return isComparison() ? ZType.BOOL : operandType(builder);
+        return operandType(builder);
     }
 
     @Override
     public Value Codegen(final IRBuilder builder) {
         final Value lhs = left.Codegen(builder);
-        if (lhs == null) return null;
+        if (lhs == null) {
+            builder.markFailed();
+            return null;
+        }
         final Value rhs = right.Codegen(builder);
-        if (rhs == null) return null;
+        if (rhs == null) {
+            builder.markFailed();
+            return null;
+        }
 
         final ZType common = operandType(builder);
         final Value a = coerce(builder, lhs, common);
@@ -70,12 +76,13 @@ public final class BinaryExprAST extends ExprAST {
             final String result = builder.nextRegister();
             builder.appendLine(result + " = zext i1 " + compared + " to i32");
             builder.setRegisterType(result, ZType.INT32.llvm());
-            return new Value(result, ZType.BOOL);
+            return new Value(result, ZType.INT32);
         }
 
         final String opcode = arithmeticOpcode(a.type());
         if (opcode == null) {
             System.err.println("Operazione non supportata: " + op);
+            builder.markFailed();
             return null;
         }
         final String result = builder.nextRegister();

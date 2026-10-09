@@ -31,9 +31,11 @@ public final class BlockAST extends ExprAST {
         for (final ExprAST statement : statements) {
             if (builder.isTerminated()) {
                 System.err.println("Error: this statement is unreachable, " + "the block has already returned");
+                builder.markFailed();
                 return null;
             }
             statement.Codegen(builder);
+            if (builder.hasFailed()) return null;
         }
         return null;
     }

@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+
 public class TestLexer {
 
     @Test
@@ -98,5 +99,129 @@ public class TestLexer {
         assertEquals(Lexer.Tokens.ASSIGN.value, lex.GetTok());
         assertEquals(Lexer.Tokens.NUMBER.value, lex.GetTok());
     }
-    // assignments for now don't work '->' are considered two tokens
+
+    @Test
+    void testIntegerLiteralKeepsItsText() throws IOException {
+        final Lexer lex = new Lexer(new ByteArrayInputStream(
+                "9007199254740993".getBytes(StandardCharsets.UTF_8)));
+
+        assertEquals(Lexer.Tokens.NUMBER.value, lex.GetTok());
+        assertEquals("9007199254740993", lex.NumberText);
+        assertTrue(lex.NumIsInteger);
+        assertFalse(lex.NumIsFloat);
+    }
+
+    @Test
+    void testFloatLiteralIsMarkedAsFloating() throws IOException {
+        final Lexer lex = new Lexer(new ByteArrayInputStream(
+                "3.14".getBytes(StandardCharsets.UTF_8)));
+
+        assertEquals(Lexer.Tokens.NUMBER.value, lex.GetTok());
+        assertEquals("3.14", lex.NumberText);
+        assertTrue(lex.NumIsFloat);
+    }
+
+    @Test
+    void testExponentIsAFloatLiteral() throws IOException {
+        final Lexer lex = new Lexer(new ByteArrayInputStream(
+                "1e3".getBytes(StandardCharsets.UTF_8)));
+
+        assertEquals(Lexer.Tokens.NUMBER.value, lex.GetTok());
+        assertEquals("1e3", lex.NumberText);
+        assertTrue(lex.NumIsFloat);
+        assertEquals(1000.0, lex.NumVal);
+    }
+
+    @Test
+    void testSubtractionIsNotAnAssignment() throws IOException {
+        final Lexer lex = new Lexer(new ByteArrayInputStream(
+                "- 5".getBytes(StandardCharsets.UTF_8)));
+
+        assertEquals(Lexer.Tokens.SUB.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.NUMBER.value, lex.GetTok());
+    }
+
+    @Test
+    void testEndOfInput() throws IOException {
+        final Lexer lex = new Lexer(new ByteArrayInputStream(
+                "ret".getBytes(StandardCharsets.UTF_8)));
+
+        assertEquals(Lexer.Tokens.RET.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.EOF.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.EOF.value, lex.GetTok());
+    }
+
+    @Test
+    void testTypeKeywords() throws IOException {
+        final String code = "int32 int64 flt32 flt64";
+
+        final Lexer lex = new Lexer(new ByteArrayInputStream(code.getBytes(StandardCharsets.UTF_8)));
+
+        assertEquals(Lexer.Tokens.INT32.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.INT64.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.FLOAT32.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.FLOAT64.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.EOF.value, lex.GetTok());
+    }
+
+    @Test
+    void testForKeywordAndItsSymbols() throws IOException {
+        final String code = "for (int32 i -> 0 | i < 10 | i + 1) {";
+
+        final Lexer lex = new Lexer(new ByteArrayInputStream(code.getBytes(StandardCharsets.UTF_8)));
+
+        assertEquals(Lexer.Tokens.FOR.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.OPEN_PAR.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.INT32.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.IDENTIFIER.value, lex.GetTok());
+        assertEquals("i", lex.IdentifierStr);
+        assertEquals(Lexer.Tokens.ASSIGN.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.NUMBER.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.PARAMS.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.IDENTIFIER.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.LESS.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.NUMBER.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.PARAMS.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.IDENTIFIER.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.ADD.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.NUMBER.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.CLOSE_PAR.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.OPEN_FUNC.value, lex.GetTok());
+    }
+
+    @Test
+    void testDivSymbol() throws IOException {
+        final Lexer lex = new Lexer(new ByteArrayInputStream(
+                "7 / 2".getBytes(StandardCharsets.UTF_8)));
+
+        assertEquals(Lexer.Tokens.NUMBER.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.DIV.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.NUMBER.value, lex.GetTok());
+    }
+
+    @Test
+    void testIdentifierKeepsItsName() throws IOException {
+        final Lexer lex = new Lexer(new ByteArrayInputStream(
+                "myVar42".getBytes(StandardCharsets.UTF_8)));
+
+        assertEquals(Lexer.Tokens.IDENTIFIER.value, lex.GetTok());
+        assertEquals("myVar42", lex.IdentifierStr);
+    }
+
+    @Test
+    void testCommentAtEndOfInput() throws IOException {
+        final Lexer lex = new Lexer(new ByteArrayInputStream(
+                "ret // trailing".getBytes(StandardCharsets.UTF_8)));
+
+        assertEquals(Lexer.Tokens.RET.value, lex.GetTok());
+        assertEquals(Lexer.Tokens.EOF.value, lex.GetTok());
+    }
+
+    @Test
+    void testUnknownCharacterIsItsAsciiCode() throws IOException {
+        final Lexer lex = new Lexer(new ByteArrayInputStream(
+                "@".getBytes(StandardCharsets.UTF_8)));
+
+        assertEquals('@', lex.GetTok());
+    }
 }

@@ -24,6 +24,11 @@ public final class CallExprAST extends ExprAST {
         return callee;
     }
 
+    /** @return the arguments, in order */
+    public List<ExprAST> arguments() {
+        return arguments;
+    }
+
     @Override
     public ZType type(final IRBuilder builder) {
         final PrototypeAST signature = builder.signatures().get(callee);
@@ -35,19 +40,24 @@ public final class CallExprAST extends ExprAST {
         final PrototypeAST signature = builder.signatures().get(callee);
         if (signature == null) {
             System.err.println("Error: unknown function: " + callee);
+            builder.markFailed();
             return null;
         }
 
         final List<PrototypeAST.Param> params = signature.getParams();
         if (params.size() != arguments.size()) {
             System.err.println("Error: '" + callee + "' takes " + params.size() + " argument(s) but " + arguments.size() + " were given");
+            builder.markFailed();
             return null;
         }
 
         final List<String> printed = new java.util.ArrayList<>();
         for (int i = 0; i < arguments.size(); i++) {
             final Value argument = arguments.get(i).Codegen(builder);
-            if (argument == null) return null;
+            if (argument == null) {
+                builder.markFailed();
+                return null;
+            }
             final ZType expected = ZType.fromZName(params.get(i).type);
             final Value fitted = coerce(builder, argument, expected);
             if (fitted == null) return null;
