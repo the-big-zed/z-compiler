@@ -179,6 +179,8 @@ public class Parser {
                 parsed = parseDefinition();
             } else if (token == Lexer.Tokens.CN) {
                 parsed = parseConstant();
+            } else if (token == Lexer.Tokens.ARRAY_OPEN) {
+                parsed = parseArray();
             } else if (isTypeToken(token)) {
                 parsed = parseVariable(false);
             } else if (token == Lexer.Tokens.EXTERN){
@@ -249,6 +251,77 @@ public class Parser {
         if (value == null) return null;
 
         return new DeclaratorExprAST(zType, name, value, true, false);
+    }
+    public final ArrayAST parseArray() throws IOException {
+        //next(); (I believe this isn't necessary here)
+
+        final Lexer.Tokens typeTok = Lexer.Tokens.fromValues(curTok);
+        if (!isTypeToken(typeTok)) {
+            return error("Expected type after array definition");
+        }
+        final ZType zType = resolveType(typeTok.description);
+        if (zType == null) return null;
+        next();
+
+        if (curTok != Lexer.Tokens.PARAMS.value) {
+            return error("Expected '|' after type definition");
+        }
+        next();
+        if (curTok != Lexer.Tokens.NUMBER.value) {
+            error("expected number");
+        }
+        double size = lex.numVal;
+        NumberExprAST arraySize = (NumberExprAST) parseNumberExpr(size);
+        NumberExprAST arrayDepth = (NumberExprAST) parseNumberExpr(1);
+        next();
+
+        if (curTok == Lexer.Tokens.PARAMS.value) {
+            next();
+            if (curTok != Lexer.Tokens.NUMBER.value) {
+                error("expected number");
+            }
+            double depth = lex.numVal;
+            if (size < 1) {
+                return error("Invalid depth");
+            }
+            arrayDepth = (NumberExprAST) parseNumberExpr(depth); //for matrixes, depth 2 means [][], 1 is default
+            next();
+        } else if (curTok != Lexer.Tokens.ARRAY_CLOSE.value) {
+            return error("Expected closing bracket");
+        }
+        next();
+
+        if (curTok != Lexer.Tokens.IDENTIFIER.value) {
+            return error("Expected identifier name");
+        }
+        final String name = lex.identifierStr;
+        next();
+
+        if (curTok != Lexer.Tokens.OPEN_FUNC.value) {
+            return new ArrayAST(zType, arraySize, arrayDepth, name, new ArrayList<NumberExprAST>());
+        }
+        next();
+
+        if (curTok != Lexer.Tokens.ASSIGN.value && curTok != Lexer.Tokens.SAME.value) {
+            return error("Expected '->' or '=' in constant declaration");
+        }
+        next();
+
+        final List<NumberExprAST> members = new ArrayList<>((int) size);
+
+        for (int i = 0; i < (int) size; ++i) {
+
+            NumberExprAST valAST = (NumberExprAST) parseNumberExpr(lex.numVal); //qua dentro fa già un next
+            members.add(valAST);
+            if (curTok != Lexer.Tokens.PARAMS.value && curTok != Lexer.Tokens.CLOSE_FUNC.value) {
+                return error("Expected '|' after type definition");
+            } else if (curTok == Lexer.Tokens.CLOSE_FUNC.value) {
+                break;
+            }
+            next();
+        }
+
+        return new ArrayAST(zType, arraySize, arrayDepth, name, members);
     }
 
     /**
@@ -374,6 +447,7 @@ public class Parser {
             idName.append(".").append(lex.identifierStr);
             next();
         }
+        //TODO: add support for array indexing here
 
         if (curTok != Lexer.Tokens.OPEN_PAR.value) {
             return new VarRefExprAST(idName.toString());
@@ -658,6 +732,8 @@ public class Parser {
             return parseVariable(false);
         } else if (token == Lexer.Tokens.CN) {
             return parseConstant();
+        } else if (token == Lexer.Tokens.ARRAY_OPEN) {
+            return parseArray();
         } else {
             return parseExpression();
         }
@@ -828,10 +904,6 @@ public class Parser {
 
         final List<ExprAST> bodyStatements = new ArrayList<>();
         while (curTok != Lexer.Tokens.CLOSE_FUNC.value && curTok != Lexer.Tokens.EOF.value) {
-            if (curTok == ';') {
-                next();
-                continue;
-            }
             final ExprAST stmt = parseStatement();
             if (stmt == null) return null;
             bodyStatements.add(stmt);
