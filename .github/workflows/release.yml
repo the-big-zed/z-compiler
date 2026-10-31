@@ -42,7 +42,7 @@ jobs:
         run: |
           set -euo pipefail
           
-          git fetch origin main --target=origin/main
+          git fetch origin main:refs/remotes/origin/main
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             TAG="${{ inputs.tag }}"
