@@ -2,6 +2,39 @@
 
 All notable changes to Z-Compiler are documented in this file.
 
+## [0.0.9-rc.1] - 2026-10-31
+
+### Features
+
+- Add break and continue keywords (#169)
+
+### Bug Fixes
+
+- Fix email configuration for GitHub Actions bot
+- Fix email configuration for GitHub Actions tag creation
+- Fix release workflow manual tag validation fallback
+- Fix release workflow tag SHA lookup for missing tags
+- Fix release workflow tag rev-parse for actionlint
+- Fix git fetch command in release workflow
+- Fix tag retrieval and error message in release workflow
+- Fix YAML lint formatting in release workflow
+- Fix #175: add struct types, literals and field access
+- Fix #138: add examples and syntax to README
+- Fix missing LLVM target triple warning (#167)
+
+### Documentation
+
+- Docs: update changelog for v0.0.8-rc.1
+
+### Other Changes
+
+- Update release workflow with permissions and credentials
+- Initial plan
+- Initial plan
+- Remove extra spaces in release.yml
+- Enhance release workflow with manual trigger and validations
+- Update release.yml
+
 ## [0.0.8-rc.1] - 2026-10-26
 
 ### Features
