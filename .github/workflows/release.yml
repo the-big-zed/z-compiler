@@ -47,7 +47,7 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             TAG="${{ inputs.tag }}"
 
-            SHA=$(git rev-parse "refs/tags/$TAG^{commit}" 2>/dev/null || echo "")
+            SHA=$(git rev-parse --verify --quiet "refs/tags/$TAG^{commit}" || true)
 
             if [ -z "$SHA" ]; then
               echo "::error::Il tag '$TAG' doesn't exist."
