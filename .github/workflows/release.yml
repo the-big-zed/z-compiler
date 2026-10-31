@@ -80,7 +80,7 @@ jobs:
     uses: ./.github/workflows/build-artifacts.yml
     with:
       channel: ${{ needs.prepare.outputs.channel }}
-      version: ${{ needs.prepare.outputs.tag_name }} 
+      version: ${{ needs.prepare.outputs.tag_name }}
     permissions:
       contents: read
       packages: write
@@ -116,8 +116,8 @@ jobs:
       - name: Publish
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ needs.prepare.outputs.tag_name }} 
-          name: Z-Compiler ${{ needs.prepare.outputs.tag_name }} 
+          tag_name: ${{ needs.prepare.outputs.tag_name }}
+          name: Z-Compiler ${{ needs.prepare.outputs.tag_name }}
           body_path: dist/RELEASE_NOTES.md
           generate_release_notes: true
           prerelease: ${{ needs.prepare.outputs.channel == 'staging' }}
