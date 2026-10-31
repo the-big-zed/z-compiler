@@ -41,14 +41,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          
+
           git fetch origin main:refs/remotes/origin/main
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             TAG="${{ inputs.tag }}"
-            
-            SHA=$(git rev-parse refs/tags/"$TAG"^{commit} 2>/dev/null || echo "")
-            
+
+            SHA=$(git rev-parse "refs/tags/$TAG^{commit}" 2>/dev/null || echo "")
+
             if [ -z "$SHA" ]; then
               echo "::error::Il tag '$TAG' doesn't exist."
               exit 1
@@ -77,7 +77,7 @@ jobs:
           echo "Releasing $TAG on the $channel channel"
           echo "channel=$channel" >> "$GITHUB_OUTPUT"
           echo "tag_name=$TAG" >> "$GITHUB_OUTPUT"
-          
+
   build:
     name: Build the release binaries
     needs: prepare
