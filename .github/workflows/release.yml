@@ -2,6 +2,12 @@
 name: Release
 
 on:
+  workflow_dispatch:
+    inputs:
+       tag:
+          description: "tag"
+          type: string
+          
   push:
     tags:
       - 'v*.*.*'
@@ -50,6 +56,9 @@ jobs:
 
           echo "Releasing $GITHUB_REF_NAME on the $channel channel"
           echo "value=$channel" >> "$GITHUB_OUTPUT"
+        if: ${{ inputs.tag }}
+        env:
+          GITHUB_REF_NAME: ${{ inputs.tag }}
 
   build:
     name: Build the release binaries
