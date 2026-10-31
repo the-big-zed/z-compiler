@@ -4,11 +4,11 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
-       tag:
-          description: "release tag"
-          required: true
-          type: string
-          
+      tag:
+        description: "release tag"
+        required: true
+        type: string
+
   push:
     tags:
       - 'v*.*.*'
@@ -53,7 +53,7 @@ jobs:
             TAG="${{ github.ref_name }}"
             SHA="${{ github.sha }}"
           fi
-          
+
           if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
             echo "::error::Tag '$TAG' is not a semantic version tag (expected vMAJOR.MINOR.PATCH)."
             exit 1
