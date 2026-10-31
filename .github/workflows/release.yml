@@ -1,11 +1,12 @@
-# Release: triggered by a `v*.*.*` tag.
+# Release: triggered by a `v*.*.*` tag or manually.
 name: Release
 
 on:
   workflow_dispatch:
     inputs:
        tag:
-          description: "tag"
+          description: "release tag"
+          required: true
           type: string
           
   push:
@@ -25,7 +26,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
-      channel: ${{ steps.channel.outputs.value }}
+      channel: ${{ steps.determine-target.outputs.channel }}
+      tag_name: ${{ steps.determine-target.outputs.tag_name }}
 
     steps:
       - name: Checkout
@@ -34,31 +36,43 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Validate the tag
-        id: channel
+      - name: Determine and validate tag
+        id: determine-target
         shell: bash
         run: |
           set -euo pipefail
-          if [[ ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
-            echo "::error::Tag '$GITHUB_REF_NAME' is not a semantic version tag (expected vMAJOR.MINOR.PATCH)."
-            exit 1
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+            SHA=$(git rev-parse refs/tags/"$TAG" 2>/dev/null || echo "")
+            if [ -z "$SHA" ]; then
+              echo "::error::Il tag '$TAG' doesn't exist"
+              exit 1
+            fi
+          else
+            TAG="${{ github.ref_name }}"
+            SHA="${{ github.sha }}"
           fi
-          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
-            echo "::error::Tag '$GITHUB_REF_NAME' does not point to a commit of the 'main' branch."
+          
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Tag '$TAG' is not a semantic version tag (expected vMAJOR.MINOR.PATCH)."
             exit 1
           fi
 
-          if [[ "$GITHUB_REF_NAME" == *-* ]]; then
+          if ! git merge-base --is-ancestor "$SHA" origin/main; then
+            echo "::error::Tag '$TAG' (commit $SHA) does not point to a commit of the 'main' branch."
+            exit 1
+          fi
+
+          if [[ "$TAG" == *-* ]]; then
             channel=staging
           else
             channel=production
           fi
 
-          echo "Releasing $GITHUB_REF_NAME on the $channel channel"
-          echo "value=$channel" >> "$GITHUB_OUTPUT"
-        if: ${{ inputs.tag }}
-        env:
-          GITHUB_REF_NAME: ${{ inputs.tag }}
+          echo "Releasing $TAG on the $channel channel"
+          echo "channel=$channel" >> "$GITHUB_OUTPUT"
+          echo "tag_name=$TAG" >> "$GITHUB_OUTPUT"
 
   build:
     name: Build the release binaries
@@ -66,7 +80,7 @@ jobs:
     uses: ./.github/workflows/build-artifacts.yml
     with:
       channel: ${{ needs.prepare.outputs.channel }}
-      version: ${{ github.ref_name }}
+      version: ${{ needs.prepare.outputs.tag_name }} 
     permissions:
       contents: read
       packages: write
@@ -79,7 +93,7 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write
-      id-token: write        # provenance attestation
+      id-token: write
       attestations: write
 
     steps:
@@ -102,8 +116,8 @@ jobs:
       - name: Publish
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ github.ref_name }}
-          name: Z-Compiler ${{ github.ref_name }}
+          tag_name: ${{ needs.prepare.outputs.tag_name }} 
+          name: Z-Compiler ${{ needs.prepare.outputs.tag_name }} 
           body_path: dist/RELEASE_NOTES.md
           generate_release_notes: true
           prerelease: ${{ needs.prepare.outputs.channel == 'staging' }}
